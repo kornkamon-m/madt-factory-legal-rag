@@ -1,36 +1,46 @@
 import streamlit as st
+from functions import load_data, search_similarity, generate_response, generate_legal_steps
 
-st.title("Legal Advisory System")
-    st.write("ระบบแนะนำและตอบคำถามเกี่ยวกับการขออนุญาตสำหรับโรงงานอาหาร")
+# Path to Preprocessed Data
+DATA_PATH = "embedded_chunks.csv"
 
-    # Feature 1: ระบบแสดงคำแนะนำ
-    st.header("แสดงคำแนะนำ")
-    food_type = st.selectbox("เลือกประเภทอาหาร", metadata["food_types"])
-    production_capacity = st.number_input("กำลังการผลิต (ตัน/วัน):", min_value=0.1, step=0.1)
-    machine_power = st.number_input("ขนาดแรงม้า (HP):", min_value=1, step=1)
-    if st.button("แสดงคำแนะนำ"):
-        guidelines = get_guidelines(food_type, production_capacity, machine_power)
-        if guidelines:
-            st.success("คำแนะนำที่เหมาะสม:")
-            for guideline in guidelines:
-                st.write(f"- {guideline}")
-        else:
-            st.warning("ไม่พบคำแนะนำสำหรับข้อมูลที่ป้อน")
+# Load Data
+df_chunks = load_data(DATA_PATH)
+
+# Streamlit UI
+def main():
+    st.title("Legal Advisory System")
+    st.write("ระบบแนะนำและตอบคำถามด้านกฎหมายสำหรับโรงงานอาหาร")
+
+    # Feature 1: ระบบแสดงคำแนะนำการขออนุญาต
+    st.header("1. ระบบแสดงคำแนะนำการขออนุญาต")
+    with st.form("legal_form"):
+        food_type = st.text_input("ประเภทอาหาร:")
+        production_capacity = st.number_input("กำลังการผลิต (ตัน/วัน):", min_value=0.0, step=0.1)
+        machine_power = st.number_input("ขนาดแรงม้า (HP):", min_value=0, step=1)
+        submitted = st.form_submit_button("แสดงคำแนะนำ")
+        
+        if submitted:
+            steps = generate_legal_steps(food_type, production_capacity, machine_power)
+            st.subheader("คำแนะนำ:")
+            st.write(steps)
 
     # Feature 2: ระบบ Q&A
-    st.header("ระบบ Q&A")
-    query = st.text_input("ป้อนคำถาม:")
-    if st.button("ค้นหา"):
-        results = search_query(query, model, index, metadata)
-        if results:
-            st.success("คำตอบที่พบ:")
-            top_context = "\n".join([result["content"] for result in results])
-            response = generate_response(top_context, query)
-            st.write("**คำตอบ:**")
-            st.write(response)
+    st.header("2. ระบบ Q&A")
+    query = st.text_input("ป้อนคำถามที่ต้องการค้นหา:")
+    if query:
+        results = search_similarity(query, df_chunks)
+        top_context = "\n".join(results['content'].values)
+        
+        # Generate Answer
+        answer = generate_response(top_context, query)
+        
+        st.subheader("คำตอบ:")
+        st.write(answer)
+        
+        st.subheader("บริบทที่เกี่ยวข้อง:")
+        for _, row in results.iterrows():
+            st.write(f"- {row['content'][:300]}...")
 
-            st.write("**บริบทที่เกี่ยวข้อง:**")
-            for result in results:
-                st.write(f"- {result['content'][:300]}...")
-        else:
-            st.warning("ไม่พบข้อมูลที่เกี่ยวข้อง")
+if __name__ == "__main__":
+    main()
