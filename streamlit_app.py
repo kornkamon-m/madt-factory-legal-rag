@@ -1,5 +1,5 @@
 import streamlit as st
-from google.generativeai import generate_text
+from google.generativeai import genai
 
 # Set up the page title
 st.title("AI Advisory for Food Factory Setup")
@@ -71,7 +71,7 @@ else:
 
             # Send the prompt to the generative AI model
             try:
-                response = generate_text(prompt, api_key=st.session_state["api_key"])
+                response = genai(prompt, api_key=st.session_state["api_key"])
 
                 # Display the response
                 if response:
