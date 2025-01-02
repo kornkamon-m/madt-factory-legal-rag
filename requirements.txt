@@ -7,3 +7,4 @@ torch
 langchain
 PyPDF2
 pythainlp
+google-generativeai
