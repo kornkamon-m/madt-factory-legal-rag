@@ -17,6 +17,7 @@ if not st.session_state["api_key"]:
             st.session_state["api_key"] = api_key_input
             st.success("API Key ถูกบันทึกแล้ว")
             genai.configure(api_key=api_key_input)
+            model = genai.GenerativeModel("gemini-pro") 
         else:
             st.error("กรุณากรอก API Key")
 else:
@@ -67,7 +68,7 @@ else:
                 genai.configure(api_key=st.session_state["api_key"])
                 
                 # Generate content using the correct argument
-                response = genai.generate_text(input_text=input_text)  # Corrected argument
+                response = model.generate_content(f"{input_text}\nUser: {factory_type},{production_capacity},{machine_power}") 
                 
                 # Display response
                 if response and "candidates" in response:
