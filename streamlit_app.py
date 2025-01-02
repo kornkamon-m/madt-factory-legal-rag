@@ -1,82 +1,70 @@
 import streamlit as st
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
-from langchain.llms import OpenAI
+from google.generativeai import generate_text
 
-# เริ่มต้น UI
+# Set up the page title
 st.title("AI Advisory for Food Factory Setup")
-st.write("ระบบแนะนำข้อกำหนดทางกฎหมายและขั้นตอนการจัดตั้งโรงงานอาหาร")
+st.subheader("ระบบแนะนำข้อกำหนดทางกฎหมายและขั้นตอนการขออนุญาตจัดตั้งโรงงานอาหารในประเทศไทย")
 
-# ฟังก์ชันดึงข้อมูลจาก Vector DB
-@st.cache_resource
-def load_vector_store():
-    embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large")
-    vector_store = FAISS.load_local("vector_db", embeddings)
-    return vector_store
+# Navigation button
+if st.button("เริ่มต้นใช้งาน"):
+    st.write("กรอกข้อมูลด้านล่างเพื่อรับคำแนะนำ")
 
-# โหลด Vector Store
-vector_db = load_vector_store()
+# Input form for user data
+with st.form("factory_form"):
+    st.header("กรอกข้อมูลโรงงาน")
+    factory_type = st.selectbox("เลือกประเภทอาหาร", ["ผลไม้แปรรูป", "น้ำดื่มบรรจุขวด", "ผลิตภัณฑ์นม", "อื่นๆ"])
+    production_capacity = st.number_input("กำลังการผลิต (ตัน/วัน)", min_value=0, step=1)
+    machine_power = st.number_input("ขนาดแรงม้า (HP)", min_value=0, step=1)
 
-# Prompt Template สำหรับ Generative AI
-prompt_template = """
-คุณเป็น AI ที่ช่วยแนะนำกฎหมายและขั้นตอนการจัดตั้งโรงงานในประเทศไทย
-ใช้ข้อมูลที่มีบริบทเกี่ยวข้องจาก Vector Database ในการสร้างคำตอบที่ชัดเจนและเข้าใจง่าย:
+    submit_button = st.form_submit_button("ยืนยันข้อมูล")
 
-คำถาม: {question}
-ข้อมูลที่เกี่ยวข้อง: {context}
-
-คำตอบที่ชัดเจน:
-"""
-
-# ฟังก์ชัน Q&A โดยใช้ Retrieval + Generative AI
-def retrieve_and_generate(query):
-    retriever = vector_db.as_retriever()
-    llm = OpenAI(model="gpt-3.5-turbo")
-    prompt = PromptTemplate(template=prompt_template, input_variables=["question", "context"])
-    
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=retriever,
-        chain_type_kwargs={"prompt": prompt}
-    )
-    return qa_chain.run(query)
-
-# Input Form สำหรับข้อมูลโรงงาน
-with st.form("factory_input"):
-    st.subheader("กรอกข้อมูลโรงงาน")
-    factory_type = st.selectbox("ประเภทอาหาร", ["ผลไม้แปรรูป", "น้ำดื่มบรรจุขวด", "ผลิตภัณฑ์นม", "อื่นๆ"])
-    production_capacity = st.number_input("กำลังการผลิต (ตัน/วัน)", min_value=1)
-    horsepower = st.number_input("ขนาดแรงม้า (HP)", min_value=1)
-    workers = st.number_input("จำนวนแรงงาน", min_value=1)
-    location = st.text_input("ที่ตั้งโรงงาน (จังหวัด)")
-
-    submit_button = st.form_submit_button("ค้นหาข้อกำหนด")
-
+# Context generation and API interaction
 if submit_button:
-    st.success("ข้อมูลถูกบันทึก! คุณสามารถถามคำถามเพิ่มเติมเกี่ยวกับกฎหมายได้")
+    st.write("ข้อมูลที่ได้รับ:")
+    st.write(f"- ประเภทโรงงาน: {factory_type}")
+    st.write(f"- กำลังการผลิต: {production_capacity} ตัน/วัน")
+    st.write(f"- ขนาดแรงม้า: {machine_power} HP")
 
-# Conversation Q&A
-st.subheader("ถามคำถามเกี่ยวกับการจัดตั้งโรงงาน")
-query = st.text_input("ป้อนคำถามที่นี่:", placeholder="เช่น โรงงานผลิตน้ำดื่มต้องทำ EIA ไหม?")
-if st.button("ถาม"):
-    if query:
-        with st.spinner("กำลังประมวลผล..."):
-            response = retrieve_and_generate(query)
-            st.write("**คำตอบ:**")
-            st.write(response)
-    else:
-        st.warning("กรุณาป้อนคำถาม")
+    # Prompt structure
+    input_query = st.text_input("ระบุคำถามเกี่ยวกับโรงงาน:", "")
+    if input_query:
+        context = "ข้อมูลบริบทอื่นๆ ที่เกี่ยวข้องกับกฎหมายโรงงานและอาหาร"  # Adjust with dynamic context if available
+        prompt = f"""
+        คุณคือที่ปรึกษาด้านกฎหมายและระเบียบข้อบังคับสำหรับโรงงานอาหารในประเทศไทย 
+        ระบบนี้ต้องให้คำแนะนำที่ถูกต้อง ครบถ้วน และชัดเจน โดยอิงจากข้อมูลที่ได้รับและบริบทที่เกี่ยวข้อง
 
-# ส่วนแสดงประวัติการถาม-ตอบ
-if "conversation_history" not in st.session_state:
-    st.session_state.conversation_history = []
+        **คำถาม**:
+        {input_query}
 
-if query:
-    st.session_state.conversation_history.append({"question": query, "answer": response})
+        **ข้อมูลที่ได้รับจากผู้ใช้งาน**:
+        - ประเภทโรงงาน: {factory_type}
+        - กำลังการผลิต: {production_capacity} ตัน/วัน
+        - ขนาดแรงม้าเครื่องจักร: {machine_power} HP
 
-st.subheader("ประวัติการสนทนา")
-for i, qa in enumerate(st.session_state.conversation_history):
-    st.write(f"**คำถาม {i+1}:** {qa['question']}")
-    st.write(f"**คำตอบ:** {qa['answer']}")
+        **บริบท**:
+        {context}
+
+        **คำแนะนำที่ต้องการ**:
+        1. สรุปข้อกำหนดทางกฎหมายและข้อบังคับที่เกี่ยวข้องกับประเภทโรงงานดังกล่าว.
+        2. ระบุใบอนุญาตและเอกสารที่จำเป็น รวมถึงหน่วยงานที่เกี่ยวข้อง.
+        3. จัดทำขั้นตอนการดำเนินการเพื่อขออนุญาตและการปฏิบัติตามข้อกำหนด.
+        4. ให้คำแนะนำเพิ่มเติมเกี่ยวกับแนวทางปฏิบัติที่ช่วยเพิ่มความสอดคล้องและประสิทธิภาพ.
+
+        **คำตอบที่คาดหวัง**:
+        - ใช้ภาษาที่กระชับและเข้าใจง่าย.
+        - ระบุข้อกำหนดหรือมาตราที่เกี่ยวข้องในกฎหมาย (ถ้ามี).
+        - แนะนำขั้นตอนการดำเนินการและเอกสารที่จำเป็น.
+        - เพิ่มคำแนะนำเพิ่มเติมที่ช่วยให้โรงงานดำเนินการได้อย่างราบรื่น.
+
+        คำตอบ:
+        """
+
+        # Send the prompt to the generative AI model
+        response = generate_text(prompt)
+
+        # Display the response
+        if response:
+            st.subheader("คำแนะนำ:")
+            st.write(response.get("text", "ไม่สามารถให้คำแนะนำได้ในขณะนี้"))
+        else:
+            st.error("ไม่สามารถเชื่อมต่อกับระบบ AI ได้ กรุณาลองใหม่อีกครั้ง")
