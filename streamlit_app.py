@@ -36,7 +36,7 @@ else:
         st.write(f"- ขนาดแรงม้า: {machine_power} HP")
 
         # Prepare prompt
-        prompt = f"""
+        input_text = f"""
         คุณคือที่ปรึกษาด้านกฎหมายและระเบียบข้อบังคับสำหรับโรงงานอาหารในประเทศไทย 
         ระบบนี้ต้องให้คำแนะนำที่ถูกต้อง ครบถ้วน และชัดเจน โดยอิงจากข้อมูลที่ได้รับและบริบทที่เกี่ยวข้อง
 
@@ -60,12 +60,16 @@ else:
         คำตอบ:
         """
 
-            # Generate response
+        # Generate response
         with st.spinner("กำลังประมวลผลคำตอบ..."):
             try:
+                # Configure API key
                 genai.configure(api_key=st.session_state["api_key"])
-                model = genai.GenerativeModel("gemini-pro") 
-                response = model.generate_content(prompt=prompt)
+                
+                # Generate content using the correct argument
+                response = genai.generate_text(input_text=input_text)  # Corrected argument
+                
+                # Display response
                 if response and "candidates" in response:
                     answer = response["candidates"][0]["output"]
                     st.subheader("คำแนะนำ:")
