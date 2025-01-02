@@ -1,1 +1,9 @@
 streamlit
+pandas
+numpy
+sentence-transformers
+transformers
+torch
+langchain
+PyPDF2
+pythainlp
