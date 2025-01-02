@@ -1,6 +1,6 @@
 import streamlit as st
 
- st.title("Legal Advisory System")
+st.title("Legal Advisory System")
     st.write("ระบบแนะนำและตอบคำถามเกี่ยวกับการขออนุญาตสำหรับโรงงานอาหาร")
 
     # Feature 1: ระบบแสดงคำแนะนำ
@@ -34,6 +34,3 @@ import streamlit as st
                 st.write(f"- {result['content'][:300]}...")
         else:
             st.warning("ไม่พบข้อมูลที่เกี่ยวข้อง")
-
-if __name__ == "__main__":
-    main()
