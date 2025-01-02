@@ -64,7 +64,8 @@ else:
         with st.spinner("กำลังประมวลผลคำตอบ..."):
             try:
                 genai.configure(api_key=st.session_state["api_key"])
-                response = genai.generate_text(prompt=prompt)
+                model = genai.GenerativeModel("gemini-pro") 
+                response = model.generate_content(prompt=prompt)
                 if response and "candidates" in response:
                     answer = response["candidates"][0]["output"]
                     st.subheader("คำแนะนำ:")
