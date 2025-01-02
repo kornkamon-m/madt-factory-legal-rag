@@ -1,46 +1,43 @@
 import streamlit as st
-from functions import load_data, search_similarity, generate_response, generate_legal_steps
 
-# Path to Preprocessed Data
-DATA_PATH = "embedded_chunks.csv"
+# หน้า Landing Page
+st.title("AI Advisory for Food Factory Setup")
+st.write("ระบบแนะนำข้อกำหนดทางกฎหมายและขั้นตอนการขออนุญาตจัดตั้งโรงงานอาหารในประเทศไทย")
+if st.button("เริ่มต้นใช้งาน"):
+    st.session_state.page = "input"
 
-# Load Data
-df_chunks = load_data(DATA_PATH)
+# หน้า Input ข้อมูล
+if st.session_state.get('page') == "input":
+    st.header("กรอกข้อมูลโรงงาน")
+    factory_type = st.selectbox("เลือกประเภทอาหาร", ["ผลไม้แปรรูป", "น้ำดื่มบรรจุขวด", "ผลิตภัณฑ์นม", "อื่นๆ"])
+    production_capacity = st.number_input("กำลังการผลิต (ตัน/วัน)", min_value=0)
+    horsepower = st.number_input("ขนาดแรงม้า (HP)", min_value=0)
+    workers = st.number_input("จำนวนแรงงาน", min_value=0)
+    location = st.selectbox("จังหวัดที่ตั้งโรงงาน", ["กรุงเทพฯ", "ชลบุรี", "สมุทรสาคร", "อื่นๆ"])
 
-# Streamlit UI
-def main():
-    st.title("Legal Advisory System")
-    st.write("ระบบแนะนำและตอบคำถามด้านกฎหมายสำหรับโรงงานอาหาร")
+    if st.button("ค้นหาข้อกำหนดทางกฎหมาย"):
+        st.session_state.page = "output"
 
-    # Feature 1: ระบบแสดงคำแนะนำการขออนุญาต
-    st.header("1. ระบบแสดงคำแนะนำการขออนุญาต")
-    with st.form("legal_form"):
-        food_type = st.text_input("ประเภทอาหาร:")
-        production_capacity = st.number_input("กำลังการผลิต (ตัน/วัน):", min_value=0.0, step=0.1)
-        machine_power = st.number_input("ขนาดแรงม้า (HP):", min_value=0, step=1)
-        submitted = st.form_submit_button("แสดงคำแนะนำ")
-        
-        if submitted:
-            steps = generate_legal_steps(food_type, production_capacity, machine_power)
-            st.subheader("คำแนะนำ:")
-            st.write(steps)
+# หน้า Output
+if st.session_state.get('page') == "output":
+    st.header("ผลลัพธ์การวิเคราะห์")
+    st.subheader("ข้อกำหนดทางกฎหมาย")
+    st.write("- พระราชบัญญัติโรงงาน พ.ศ. 2535")
+    st.write("- มาตรฐาน GMP/HACCP")
+    st.write("- ต้องทำ EIA: **ไม่จำเป็น** (ขึ้นกับกำลังการผลิต)")
 
-    # Feature 2: ระบบ Q&A
-    st.header("2. ระบบ Q&A")
-    query = st.text_input("ป้อนคำถามที่ต้องการค้นหา:")
-    if query:
-        results = search_similarity(query, df_chunks)
-        top_context = "\n".join(results['content'].values)
-        
-        # Generate Answer
-        answer = generate_response(top_context, query)
-        
-        st.subheader("คำตอบ:")
-        st.write(answer)
-        
-        st.subheader("บริบทที่เกี่ยวข้อง:")
-        for _, row in results.iterrows():
-            st.write(f"- {row['content'][:300]}...")
+    st.subheader("ขั้นตอนการขอใบอนุญาต")
+    st.write("1. เตรียมเอกสารแบบ รง.4")
+    st.write("2. ยื่นต่อกรมโรงงานอุตสาหกรรม")
 
-if __name__ == "__main__":
-    main()
+    # Q&A Bot
+    st.subheader("มีคำถามเพิ่มเติมหรือไม่?")
+    user_question = st.text_input("ป้อนคำถามที่นี่")
+    if st.button("ถาม"):
+        st.write(f"คำตอบสำหรับ: {user_question}")  # เชื่อมต่อกับ RAG ได้ที่นี่
+
+    # Feedback
+    st.subheader("ให้ความคิดเห็น")
+    feedback = st.text_area("ความคิดเห็น")
+    if st.button("ส่งความคิดเห็น"):
+        st.success("ขอบคุณสำหรับความคิดเห็น!")
